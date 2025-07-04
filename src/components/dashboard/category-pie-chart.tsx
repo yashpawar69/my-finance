@@ -60,7 +60,7 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
   return (
     <div className="h-[350px] w-full">
       <ChartContainer config={chartConfig}>
-        <PieChart>
+        <PieChart margin={{ top: 20 }}>
           <Tooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
           <ChartLegend content={<ChartLegendContent nameKey="name" />} />
           <Pie
