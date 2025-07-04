@@ -1,9 +1,15 @@
 "use client";
 
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import type { Transaction, Category } from '@/lib/types';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
 
 type CategoryPieChartProps = {
   transactions: Transaction[];
@@ -32,6 +38,17 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
     return Object.entries(data).map(([name, value]) => ({ name, value }));
   }, [transactions]);
 
+  const chartConfig = React.useMemo(() => {
+    if (!categoryData.length) return {};
+    return categoryData.reduce((acc, { name }, index) => {
+      acc[name] = {
+        label: name,
+        color: COLORS[index % COLORS.length],
+      };
+      return acc;
+    }, {} as ChartConfig);
+  }, [categoryData]);
+
   if (categoryData.length === 0) {
     return (
       <div className="flex items-center justify-center h-[350px] text-muted-foreground">
@@ -42,10 +59,10 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
 
   return (
     <div className="h-[350px] w-full">
-      <ResponsiveContainer>
+      <ChartContainer config={chartConfig}>
         <PieChart>
-          <Tooltip content={<ChartTooltipContent />} />
-          <Legend layout="vertical" align="right" verticalAlign="middle" iconSize={10} />
+          <Tooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+          <ChartLegend content={<ChartLegendContent nameKey="name" />} />
           <Pie
             data={categoryData}
             cx="50%"
@@ -53,17 +70,16 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
             labelLine={false}
             outerRadius={110}
             innerRadius={60}
-            fill="#8884d8"
             dataKey="value"
             nameKey="name"
             paddingAngle={2}
           >
-            {categoryData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            {categoryData.map((entry) => (
+              <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
             ))}
           </Pie>
         </PieChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }

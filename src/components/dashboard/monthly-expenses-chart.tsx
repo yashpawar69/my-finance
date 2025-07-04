@@ -1,14 +1,27 @@
 "use client";
 
 import React from 'react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, Tooltip } from 'recharts';
 import { format, startOfMonth } from 'date-fns';
 import type { Transaction } from '@/lib/types';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
 
 type MonthlyExpensesChartProps = {
   transactions: Transaction[];
 };
+
+const chartConfig = {
+  expenses: {
+    label: 'Expenses',
+    color: 'hsl(var(--primary))',
+  },
+} satisfies ChartConfig;
 
 export default function MonthlyExpensesChart({ transactions }: MonthlyExpensesChartProps) {
   const monthlyData = React.useMemo(() => {
@@ -38,18 +51,18 @@ export default function MonthlyExpensesChart({ transactions }: MonthlyExpensesCh
 
   return (
     <div className="h-[350px] w-full">
-      <ResponsiveContainer>
-        <BarChart data={monthlyData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+      <ChartContainer config={chartConfig}>
+        <BarChart accessibilityLayer data={monthlyData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
           <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
           <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
           <Tooltip 
             cursor={{ fill: 'hsl(var(--muted))' }}
-            content={<ChartTooltipContent />} 
+            content={<ChartTooltipContent hideLabel />} 
           />
-          <Legend />
-          <Bar dataKey="expenses" fill="hsl(var(--primary))" name="Expenses" radius={[4, 4, 0, 0]} />
+          <ChartLegend content={<ChartLegendContent />} />
+          <Bar dataKey="expenses" fill="var(--color-expenses)" radius={[4, 4, 0, 0]} />
         </BarChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }
