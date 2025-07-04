@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useTransition } from 'react';
 import type { Transaction, Category } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,16 +10,19 @@ import MonthlyExpensesChart from './monthly-expenses-chart';
 import CategoryPieChart from './category-pie-chart';
 import TransactionList from './transaction-list';
 import { AddTransactionSheet } from './add-transaction-sheet';
+import { addTransaction, updateTransaction, deleteTransaction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 type DashboardClientProps = {
   initialTransactions: Transaction[];
   categories: Category[];
 };
 
-export default function DashboardClient({ initialTransactions, categories }: DashboardClientProps) {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+export default function DashboardClient({ initialTransactions: transactions, categories }: DashboardClientProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const summary = useMemo(() => {
     const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -52,17 +55,46 @@ export default function DashboardClient({ initialTransactions, categories }: Das
   };
 
   const handleDeleteTransaction = (id: string) => {
-    setTransactions(transactions.filter(t => t.id !== id));
+    startTransition(async () => {
+      const result = await deleteTransaction(id);
+      if (result.success) {
+        toast({
+          title: 'Transaction Deleted',
+          description: 'The transaction has been successfully deleted.',
+        });
+      } else {
+        toast({
+          title: 'Error Deleting',
+          description: result.error || 'An unknown error occurred.',
+          variant: 'destructive',
+        });
+      }
+    });
   };
   
-  const handleSaveTransaction = (transaction: Omit<Transaction, 'id'> & { id?: string }) => {
-    if (transaction.id) {
-      // Edit existing
-      setTransactions(transactions.map(t => t.id === transaction.id ? { ...t, ...transaction } : t));
-    } else {
-      // Add new
-      setTransactions([...transactions, { ...transaction, id: new Date().toISOString() }]);
-    }
+  const handleSaveTransaction = (data: Omit<Transaction, 'id'> & { id?: string }) => {
+    startTransition(async () => {
+      const { id, ...transactionData } = data;
+      const isEditing = !!id;
+
+      const result = isEditing 
+        ? await updateTransaction(id, transactionData) 
+        : await addTransaction(transactionData);
+
+      if (result.success) {
+        toast({
+          title: `Transaction ${isEditing ? 'Updated' : 'Added'}`,
+          description: `Successfully ${isEditing ? 'updated' : 'added'} transaction.`,
+        });
+        setIsSheetOpen(false);
+      } else {
+        toast({
+          title: `Error ${isEditing ? 'Updating' : 'Adding'}`,
+          description: result.error || 'An unknown error occurred.',
+          variant: 'destructive',
+        });
+      }
+    });
   };
 
   return (
@@ -125,6 +157,7 @@ export default function DashboardClient({ initialTransactions, categories }: Das
             transactions={transactions} 
             onEdit={handleEditTransaction} 
             onDelete={handleDeleteTransaction}
+            isPending={isPending}
           />
         </div>
       </main>
@@ -135,6 +168,7 @@ export default function DashboardClient({ initialTransactions, categories }: Das
         categories={categories}
         onSave={handleSaveTransaction}
         transaction={editingTransaction}
+        isPending={isPending}
       />
     </div>
   );

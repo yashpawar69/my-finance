@@ -36,13 +36,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from '@/components/icons';
-import { useToast } from '@/hooks/use-toast';
 
 const getTransactionSchema = (categories: Category[]) => z.object({
   description: z.string().min(1, "Description is required."),
   amount: z.coerce.number().positive("Amount must be a positive number."),
   date: z.date({ required_error: "A date is required." }),
-  category: z.enum(categories, { required_error: "Please select a category." }),
+  category: z.string({ required_error: "Please select a category." }).min(1, "Category is required."),
 });
 
 type AddTransactionSheetProps = {
@@ -51,6 +50,7 @@ type AddTransactionSheetProps = {
   categories: Category[];
   transaction?: Transaction;
   onSave: (data: Omit<Transaction, 'id'> & { id?: string }) => void;
+  isPending?: boolean;
 };
 
 export function AddTransactionSheet({
@@ -59,8 +59,8 @@ export function AddTransactionSheet({
   categories,
   transaction,
   onSave,
+  isPending,
 }: AddTransactionSheetProps) {
-  const { toast } = useToast();
   const transactionSchema = getTransactionSchema(categories);
 
   const form = useForm<z.infer<typeof transactionSchema>>({
@@ -74,30 +74,27 @@ export function AddTransactionSheet({
   });
 
   useEffect(() => {
-    if (transaction) {
-      form.reset({
-        description: transaction.description,
-        amount: transaction.amount,
-        date: new Date(transaction.date),
-        category: transaction.category,
-      });
-    } else {
-      form.reset({
-        description: '',
-        amount: 0,
-        date: new Date(),
-        category: undefined,
-      });
+    if (isOpen) {
+      if (transaction) {
+        form.reset({
+          description: transaction.description,
+          amount: transaction.amount,
+          date: new Date(transaction.date),
+          category: transaction.category,
+        });
+      } else {
+        form.reset({
+          description: '',
+          amount: 0,
+          date: new Date(),
+          category: undefined,
+        });
+      }
     }
   }, [transaction, isOpen, form]);
 
   const onSubmit = (data: z.infer<typeof transactionSchema>) => {
     onSave({ ...data, id: transaction?.id });
-    setIsOpen(false);
-    toast({
-      title: `Transaction ${transaction ? 'updated' : 'added'}`,
-      description: `Successfully ${transaction ? 'updated' : 'added'} transaction.`,
-    });
   };
 
   return (
@@ -146,7 +143,7 @@ export function AddTransactionSheet({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
@@ -207,11 +204,13 @@ export function AddTransactionSheet({
             />
             <SheetFooter className="pt-4">
               <SheetClose asChild>
-                <Button type="button" variant="outline">
+                <Button type="button" variant="outline" disabled={isPending}>
                   Cancel
                 </Button>
               </SheetClose>
-              <Button type="submit" className="bg-primary hover:bg-primary/90">Save Transaction</Button>
+              <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save Transaction'}
+              </Button>
             </SheetFooter>
           </form>
         </Form>
