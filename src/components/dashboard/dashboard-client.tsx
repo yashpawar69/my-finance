@@ -122,7 +122,7 @@ export default function DashboardClient({
     <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-primary font-headline">FinTrack MVP</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline">My Finance</h1>
           <div className="flex items-center gap-2">
             <Button onClick={() => setIsBudgetDialogOpen(true)} variant="outline">
                 <Target className="w-4 h-4 mr-2" />

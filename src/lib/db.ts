@@ -36,6 +36,6 @@ interface ConnectToDatabaseResult {
 
 export async function connectToDatabase(): Promise<ConnectToDatabaseResult> {
     const client = await clientPromise;
-    const db = client.db("fintrack-mvp");
+    const db = client.db("my-finance");
     return { client, db };
 }
