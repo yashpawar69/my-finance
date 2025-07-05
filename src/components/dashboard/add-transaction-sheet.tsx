@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { Transaction, Category } from '@/lib/types';
+import type { Transaction, Category, TransactionInput } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -49,7 +49,7 @@ type AddTransactionSheetProps = {
   setIsOpen: (isOpen: boolean) => void;
   categories: Category[];
   transaction?: Transaction;
-  onSave: (data: Omit<Transaction, 'id'> & { id?: string }) => void;
+  onSave: (data: TransactionInput & { id?: string }) => void;
   isPending?: boolean;
 };
 

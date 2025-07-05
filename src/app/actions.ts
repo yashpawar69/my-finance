@@ -3,12 +3,10 @@
 import 'dotenv/config';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
-import type { Transaction, Budget } from '@/lib/types';
+import type { Transaction, Budget, TransactionInput } from '@/lib/types';
 import { ObjectId } from 'mongodb';
 
-type NewTransaction = Omit<Transaction, 'id'>;
-
-export async function addTransaction(transaction: NewTransaction) {
+export async function addTransaction(transaction: TransactionInput) {
   try {
     const { db } = await connectToDatabase();
     const result = await db.collection('transactions').insertOne(transaction);
@@ -20,7 +18,7 @@ export async function addTransaction(transaction: NewTransaction) {
   }
 }
 
-export async function updateTransaction(id: string, transactionData: NewTransaction) {
+export async function updateTransaction(id: string, transactionData: TransactionInput) {
     try {
         const { db } = await connectToDatabase();
         const result = await db.collection('transactions').updateOne(

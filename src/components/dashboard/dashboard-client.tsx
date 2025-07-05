@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useTransition, useEffect } from 'react';
-import type { Transaction, Category, Budget } from '@/lib/types';
+import type { Transaction, Category, Budget, TransactionInput } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Landmark, ReceiptText, TrendingUp, Tag, PlusCircle, Target } from '@/components/icons';
@@ -60,7 +60,7 @@ export default function DashboardClient({
     { value: 'all', label: 'All Months' },
     ...Array.from({ length: 12 }, (_, i) => ({
       value: String(i),
-      label: new Date(0, i).toLocaleString('default', { month: 'long' }),
+      label: new Date(2000, i).toLocaleString('en-US', { month: 'long' }),
     })),
   ], []);
 
@@ -68,12 +68,12 @@ export default function DashboardClient({
 
   const availableYears = useMemo(() => {
     if (transactions.length === 0) {
-      return ['all', String(currentYear)];
+      return ['all', String(new Date().getFullYear())];
     }
     const years = [...new Set(transactions.map((t) => new Date(t.date).getFullYear()))];
     years.sort((a, b) => b - a);
     return ['all', ...years.map(String)];
-  }, [transactions, currentYear]);
+  }, [transactions]);
   
   const budgetYears = useMemo(() => availableYears.filter(y => y !== 'all'), [availableYears]);
 
@@ -167,7 +167,7 @@ export default function DashboardClient({
     });
   };
   
-  const handleSaveTransaction = (data: Omit<Transaction, 'id'> & { id?: string }) => {
+  const handleSaveTransaction = (data: TransactionInput & { id?: string }) => {
     startTransition(async () => {
       const { id, ...transactionData } = data;
       const isEditing = !!id;

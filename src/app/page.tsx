@@ -13,7 +13,7 @@ async function getTransactions(): Promise<Transaction[]> {
   
   return transactionsFromDB.map((t) => ({
     id: t._id.toString(),
-    date: new Date(t.date),
+    date: (t.date as Date).toISOString(), // Convert Date to ISO string for consistency
     description: t.description,
     amount: t.amount,
     category: t.category,
