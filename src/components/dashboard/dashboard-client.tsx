@@ -44,6 +44,16 @@ export default function DashboardClient({
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [selectedYear, setSelectedYear] = useState('all');
+  const [monthlyExpenseYear, setMonthlyExpenseYear] = useState('all');
+  const [monthlyExpenseMonth, setMonthlyExpenseMonth] = useState('all');
+
+  const months = useMemo(() => [
+    { value: 'all', label: 'All Months' },
+    ...Array.from({ length: 12 }, (_, i) => ({
+      value: String(i),
+      label: new Date(0, i).toLocaleString('default', { month: 'long' }),
+    })),
+  ], []);
 
   const currentMonthTransactions = useMemo(() => {
     return transactions.filter(t => {
@@ -68,6 +78,19 @@ export default function DashboardClient({
     const year = parseInt(selectedYear, 10);
     return transactions.filter((t) => new Date(t.date).getFullYear() === year);
   }, [transactions, selectedYear]);
+
+  const monthlyExpensesChartTransactions = useMemo(() => {
+    let filtered = transactions;
+    if (monthlyExpenseYear !== 'all') {
+        const year = parseInt(monthlyExpenseYear, 10);
+        filtered = filtered.filter((t) => new Date(t.date).getFullYear() === year);
+    }
+    if (monthlyExpenseMonth !== 'all' && monthlyExpenseYear !== 'all') {
+        const month = parseInt(monthlyExpenseMonth, 10);
+        filtered = filtered.filter((t) => new Date(t.date).getMonth() === month);
+    }
+    return filtered;
+  }, [transactions, monthlyExpenseYear, monthlyExpenseMonth]);
 
   const summary = useMemo(() => {
     const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -195,11 +218,45 @@ export default function DashboardClient({
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Monthly Expenses (All Time)</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
+                        <CardTitle className="text-lg font-medium">Monthly Expenses</CardTitle>
+                         <div className="flex items-center gap-2">
+                            <Select value={monthlyExpenseMonth} onValueChange={setMonthlyExpenseMonth} disabled={monthlyExpenseYear === 'all'}>
+                                <SelectTrigger className="w-[150px]">
+                                    <SelectValue placeholder="Select month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {months.map((month) => (
+                                        <SelectItem key={month.value} value={month.value}>
+                                            {month.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={monthlyExpenseYear} onValueChange={(year) => {
+                                setMonthlyExpenseYear(year);
+                                if (year === 'all') {
+                                    setMonthlyExpenseMonth('all');
+                                }
+                            }}>
+                                <SelectTrigger className="w-[130px]">
+                                    <SelectValue placeholder="Select year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableYears.map((year) => (
+                                    <SelectItem key={year} value={year}>
+                                        {year === 'all' ? 'All Time' : year}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <MonthlyExpensesChart transactions={transactions} />
+                       <MonthlyExpensesChart 
+                            transactions={monthlyExpensesChartTransactions} 
+                            groupBy={monthlyExpenseMonth !== 'all' && monthlyExpenseYear !== 'all' ? 'day' : 'month'}
+                        />
                     </CardContent>
                 </Card>
             </div>

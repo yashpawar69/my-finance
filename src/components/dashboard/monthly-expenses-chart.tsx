@@ -14,6 +14,7 @@ import type { ChartConfig } from '@/components/ui/chart';
 
 type MonthlyExpensesChartProps = {
   transactions: Transaction[];
+  groupBy?: 'month' | 'day';
 };
 
 const chartConfig = {
@@ -23,25 +24,32 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function MonthlyExpensesChart({ transactions }: MonthlyExpensesChartProps) {
-  const monthlyData = React.useMemo(() => {
-    const data: { [key: string]: number } = {};
+export default function MonthlyExpensesChart({ transactions, groupBy = 'month' }: MonthlyExpensesChartProps) {
+  const chartData = React.useMemo(() => {
+    const data: { [key: string]: { date: Date, expenses: number } } = {};
+    const isDaily = groupBy === 'day' && transactions.length > 0;
     
     transactions.forEach(t => {
-      const month = format(startOfMonth(new Date(t.date)), 'MMM yyyy');
-      if (!data[month]) {
-        data[month] = 0;
+      const date = new Date(t.date);
+      const key = isDaily 
+        ? format(date, 'yyyy-MM-dd') 
+        : format(startOfMonth(date), 'yyyy-MM');
+      
+      if (!data[key]) {
+        data[key] = { date: isDaily ? date : startOfMonth(date), expenses: 0 };
       }
-      data[month] += t.amount;
+      data[key].expenses += t.amount;
     });
 
-    return Object.entries(data)
-      .map(([name, expenses]) => ({ name, expenses }))
-      .sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime())
-      .map(d => ({...d, name: d.name.split(' ')[0]})); // just show month name
-  }, [transactions]);
+    return Object.values(data)
+      .sort((a,b) => a.date.getTime() - b.date.getTime())
+      .map(d => ({
+          name: isDaily ? format(d.date, 'MMM d') : format(d.date, 'MMM'),
+          expenses: d.expenses 
+      }));
+  }, [transactions, groupBy]);
   
-  if (monthlyData.length === 0) {
+  if (chartData.length === 0) {
     return (
       <div className="flex items-center justify-center h-[350px] text-muted-foreground">
         No data to display
@@ -52,7 +60,7 @@ export default function MonthlyExpensesChart({ transactions }: MonthlyExpensesCh
   return (
     <div className="h-[350px] w-full">
       <ChartContainer config={chartConfig}>
-        <BarChart accessibilityLayer data={monthlyData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+        <BarChart accessibilityLayer data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
           <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
           <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
           <Tooltip 
