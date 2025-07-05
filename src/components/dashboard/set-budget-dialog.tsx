@@ -81,6 +81,11 @@ export function SetBudgetDialog({
     name: "budgets",
   });
 
+  const watchedBudgets = form.watch("budgets");
+  const totalBudget = React.useMemo(() => {
+    return watchedBudgets.reduce((acc, budget) => acc + (Number(budget.limitAmount) || 0), 0);
+  }, [watchedBudgets]);
+
   const onSubmit = (data: z.infer<typeof budgetFormSchema>) => {
     startTransition(async () => {
       let success = true;
@@ -146,15 +151,23 @@ export function SetBudgetDialog({
                 )}
               />
             ))}
-            <DialogFooter className="pt-4 sticky bottom-0 bg-background">
-              <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isPending}>
-                  Cancel
+            <DialogFooter className="pt-4 sticky bottom-0 bg-background flex w-full flex-row items-center justify-between">
+               <div>
+                <span className="text-sm font-medium text-muted-foreground">Total Budget:</span>
+                <span className="ml-1 text-sm font-bold">
+                  {totalBudget.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline" disabled={isPending}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? 'Saving...' : 'Save Budgets'}
                 </Button>
-              </DialogClose>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving...' : 'Save Budgets'}
-              </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
