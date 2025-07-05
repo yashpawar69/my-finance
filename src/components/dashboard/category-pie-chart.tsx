@@ -10,19 +10,11 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
+import { getCategoryColor } from '@/lib/colors';
 
 type CategoryPieChartProps = {
   transactions: Transaction[];
 };
-
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(240, 5.9%, 10%)',
-];
 
 export default function CategoryPieChart({ transactions }: CategoryPieChartProps) {
   const categoryData = React.useMemo(() => {
@@ -40,10 +32,10 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
 
   const chartConfig = React.useMemo(() => {
     if (!categoryData.length) return {};
-    return categoryData.reduce((acc, { name }, index) => {
+    return categoryData.reduce((acc, { name }) => {
       acc[name] = {
         label: name,
-        color: COLORS[index % COLORS.length],
+        color: getCategoryColor(name),
       };
       return acc;
     }, {} as ChartConfig);
@@ -58,11 +50,10 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
   }
 
   return (
-    <div className="w-full h-[350px]">
-      <ChartContainer config={chartConfig} className="mx-auto aspect-square h-full">
+    <div className="w-full h-[350px] flex items-center justify-center">
+      <ChartContainer config={chartConfig} className="mx-auto aspect-square h-full max-h-[300px]">
         <PieChart>
           <Tooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-          <ChartLegend content={<ChartLegendContent nameKey="name" />} />
           <Pie
             data={categoryData}
             cx="50%"
@@ -78,6 +69,7 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
               <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
             ))}
           </Pie>
+          <ChartLegend content={<ChartLegendContent nameKey="name" />} />
         </PieChart>
       </ChartContainer>
     </div>

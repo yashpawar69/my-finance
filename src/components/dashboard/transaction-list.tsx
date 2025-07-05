@@ -30,6 +30,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { MoreVertical, Pencil, Trash2 } from '@/components/icons';
+import { Badge } from '@/components/ui/badge';
+import { getCategoryColor, getTextColorForBackground } from '@/lib/colors';
 import { cn } from '@/lib/utils';
 
 type TransactionListProps = {
@@ -77,39 +79,50 @@ export default function TransactionList({ transactions, onEdit, onDelete, isPend
             </TableHeader>
             <TableBody>
               {sortedTransactions.length > 0 ? (
-                sortedTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>{format(new Date(transaction.date), 'MMM d, yyyy')}</TableCell>
-                    <TableCell className="font-medium">{transaction.description}</TableCell>
-                    <TableCell>{transaction.category}</TableCell>
-                    <TableCell className="text-right">
-                      {transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit(transaction)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => openDeleteDialog(transaction.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                sortedTransactions.map((transaction) => {
+                  const categoryColor = getCategoryColor(transaction.category);
+                  const textColor = getTextColorForBackground(categoryColor);
+                  return (
+                    <TableRow key={transaction.id}>
+                      <TableCell>{format(new Date(transaction.date), 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="font-medium">{transaction.description}</TableCell>
+                      <TableCell>
+                        <Badge
+                          style={{ backgroundColor: categoryColor, color: textColor }}
+                          className="border-transparent"
+                        >
+                          {transaction.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEdit(transaction)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => openDeleteDialog(transaction.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">

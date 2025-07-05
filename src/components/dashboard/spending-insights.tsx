@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import type { Transaction, Budget, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { getCategoryColor } from '@/lib/colors';
 
 type SpendingInsightsProps = {
   transactions: Transaction[];
@@ -65,7 +66,15 @@ export default function SpendingInsights({ transactions, budgets, categories }: 
                 {item.actual.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} / {item.budget.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
               </span>
             </div>
-            <Progress value={item.percentage} className={cn("h-2", item.overBudget && "[&>div]:bg-destructive")} />
+            <Progress
+              value={item.percentage}
+              className={cn(
+                "h-2",
+                !item.overBudget && "[&>div]:bg-[--category-color]",
+                item.overBudget && "[&>div]:bg-destructive"
+              )}
+              style={{ '--category-color': getCategoryColor(item.name) } as React.CSSProperties}
+            />
             <p className={cn(
                 "text-xs mt-1",
                 item.overBudget ? "text-destructive" : "text-muted-foreground"
