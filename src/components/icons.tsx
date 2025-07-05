@@ -17,4 +17,5 @@ export {
   ArrowRight,
   Calendar as CalendarIcon,
   ChevronDown,
+  Target,
 } from "lucide-react";

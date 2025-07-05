@@ -1,28 +1,49 @@
 "use client";
 
 import React, { useState, useMemo, useTransition } from 'react';
-import type { Transaction, Category } from '@/lib/types';
+import type { Transaction, Category, Budget } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Landmark, ReceiptText, TrendingUp, Tag, PlusCircle } from '@/components/icons';
+import { Landmark, ReceiptText, TrendingUp, Tag, PlusCircle, Target } from '@/components/icons';
 import SummaryCard from './summary-card';
 import MonthlyExpensesChart from './monthly-expenses-chart';
 import CategoryPieChart from './category-pie-chart';
 import TransactionList from './transaction-list';
 import { AddTransactionSheet } from './add-transaction-sheet';
+import { SetBudgetDialog } from './set-budget-dialog';
+import BudgetComparisonChart from './budget-comparison-chart';
+import SpendingInsights from './spending-insights';
 import { addTransaction, updateTransaction, deleteTransaction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 type DashboardClientProps = {
   initialTransactions: Transaction[];
   categories: Category[];
+  initialBudgets: Budget[];
+  currentMonth: number;
+  currentYear: number;
 };
 
-export default function DashboardClient({ initialTransactions: transactions, categories }: DashboardClientProps) {
+export default function DashboardClient({ 
+  initialTransactions: transactions, 
+  categories,
+  initialBudgets: budgets,
+  currentMonth,
+  currentYear
+}: DashboardClientProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  const currentMonthTransactions = useMemo(() => {
+    return transactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+    });
+  }, [transactions, currentMonth, currentYear]);
+
 
   const summary = useMemo(() => {
     const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -100,12 +121,18 @@ export default function DashboardClient({ initialTransactions: transactions, cat
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-primary font-headline">FinTrack MVP</h1>
-          <Button onClick={handleAddTransaction} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            <PlusCircle className="w-4 h-4 mr-2" />
-            Add Transaction
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsBudgetDialogOpen(true)} variant="outline">
+                <Target className="w-4 h-4 mr-2" />
+                Set Budgets
+            </Button>
+            <Button onClick={handleAddTransaction} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Add Transaction
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -133,23 +160,36 @@ export default function DashboardClient({ initialTransactions: transactions, cat
           />
         </div>
 
-        <div className="grid gap-6 mt-6 md:grid-cols-5">
-            <Card className="md:col-span-3">
-              <CardHeader>
-                <CardTitle>Monthly Expenses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MonthlyExpensesChart transactions={transactions} />
-              </CardContent>
-            </Card>
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Category Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CategoryPieChart transactions={transactions} />
-              </CardContent>
-            </Card>
+        <div className="grid gap-6 mt-6 md:grid-cols-2 lg:grid-cols-5">
+            <div className="lg:col-span-3 space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Budget vs. Actual Spending (Current Month)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <BudgetComparisonChart transactions={currentMonthTransactions} budgets={budgets} categories={categories} />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Monthly Expenses (All Time)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <MonthlyExpensesChart transactions={transactions} />
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-2 space-y-6">
+                 <SpendingInsights transactions={currentMonthTransactions} budgets={budgets} categories={categories} />
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Category Breakdown (All Time)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center items-center pt-4">
+                        <CategoryPieChart transactions={transactions} />
+                    </CardContent>
+                </Card>
+            </div>
         </div>
 
         <div className="mt-6">
@@ -169,6 +209,14 @@ export default function DashboardClient({ initialTransactions: transactions, cat
         onSave={handleSaveTransaction}
         transaction={editingTransaction}
         isPending={isPending}
+      />
+      <SetBudgetDialog
+        isOpen={isBudgetDialogOpen}
+        setIsOpen={setIsBudgetDialogOpen}
+        categories={categories}
+        currentBudgets={budgets}
+        currentMonth={currentMonth}
+        currentYear={currentYear}
       />
     </div>
   );

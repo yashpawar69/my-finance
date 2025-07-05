@@ -1,8 +1,9 @@
 'use server';
 
+import 'dotenv/config';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
-import type { Transaction } from '@/lib/types';
+import type { Transaction, Budget } from '@/lib/types';
 import { ObjectId } from 'mongodb';
 
 type NewTransaction = Omit<Transaction, 'id'>;
@@ -51,4 +52,52 @@ export async function deleteTransaction(id: string) {
         console.error('Error deleting transaction:', error);
         return { success: false, error: 'Failed to delete transaction.' };
     }
+}
+
+export async function getBudgetsForMonth(month: number, year: number): Promise<Budget[]> {
+  try {
+    const { db } = await connectToDatabase();
+    const budgetsFromDb = await db
+      .collection('budgets')
+      .find({ month, year })
+      .toArray();
+
+    return budgetsFromDb.map((b) => ({
+      id: b._id.toString(),
+      category: b.category,
+      limitAmount: b.limitAmount,
+      month: b.month,
+      year: b.year,
+    }));
+  } catch (error) {
+    console.error('Error fetching budgets:', error);
+    return [];
+  }
+}
+
+export async function upsertBudget(budget: {
+  category: string;
+  limitAmount: number;
+  month: number;
+  year: number;
+}) {
+  try {
+    const { db } = await connectToDatabase();
+    
+    const limitAmount = Number(budget.limitAmount);
+    if (isNaN(limitAmount) || limitAmount < 0) {
+        return { success: false, error: 'Invalid budget amount.' };
+    }
+
+    const result = await db.collection('budgets').updateOne(
+      { category: budget.category, month: budget.month, year: budget.year },
+      { $set: { limitAmount } },
+      { upsert: true }
+    );
+    revalidatePath('/');
+    return { success: true, result };
+  } catch (error) {
+    console.error('Error upserting budget:', error);
+    return { success: false, error: 'Failed to save budget.' };
+  }
 }
