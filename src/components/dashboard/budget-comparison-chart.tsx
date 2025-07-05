@@ -18,7 +18,7 @@ type BudgetComparisonChartProps = {
 const chartConfig = {
   budget: {
     label: 'Budget',
-    color: 'hsl(var(--chart-3))',
+    color: 'hsl(var(--chart-4))',
   },
   actual: {
     label: 'Actual Spent',
