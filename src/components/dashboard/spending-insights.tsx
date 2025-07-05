@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import type { Transaction, Budget, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -11,9 +11,11 @@ type SpendingInsightsProps = {
   transactions: Transaction[];
   budgets: Budget[];
   categories: Category[];
+  month: number;
+  year: number;
 };
 
-export default function SpendingInsights({ transactions, budgets, categories }: SpendingInsightsProps) {
+export default function SpendingInsights({ transactions, budgets, categories, month, year }: SpendingInsightsProps) {
   const insightsData = React.useMemo(() => {
     const dataMap = new Map<Category, { budget: number; actual: number }>();
 
@@ -37,15 +39,18 @@ export default function SpendingInsights({ transactions, budgets, categories }: 
       .filter(d => d.budget > 0);
   }, [transactions, budgets]);
 
+  const monthName = new Date(year, month).toLocaleString('default', { month: 'long' });
+
   if (insightsData.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Spending Insights</CardTitle>
+          <CardDescription>{monthName} {year}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-full text-muted-foreground py-10">
-            Set a budget to see insights.
+            Set a budget to see insights for this period.
           </div>
         </CardContent>
       </Card>
@@ -56,6 +61,7 @@ export default function SpendingInsights({ transactions, budgets, categories }: 
     <Card>
       <CardHeader>
         <CardTitle>Spending Insights</CardTitle>
+        <CardDescription>{monthName} {year}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {insightsData.map(item => (

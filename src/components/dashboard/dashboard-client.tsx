@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useTransition, useEffect } from 'react';
 import type { Transaction, Category, Budget } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Landmark, ReceiptText, TrendingUp, Tag, PlusCircle, Target } from '@/components/icons';
 import SummaryCard from './summary-card';
 import MonthlyExpensesChart from './monthly-expenses-chart';
@@ -237,7 +237,9 @@ export default function DashboardClient({
             <div className="lg:col-span-3 space-y-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
-                        <CardTitle className="text-lg font-medium">Budget vs. Actual Spending</CardTitle>
+                        <div>
+                            <CardTitle className="text-lg font-medium">Budget vs. Actual Spending</CardTitle>
+                        </div>
                         <div className="flex items-center gap-2">
                             <Select value={budgetChartMonth} onValueChange={setBudgetChartMonth}>
                                 <SelectTrigger className="w-[150px]">
@@ -313,7 +315,13 @@ export default function DashboardClient({
                 </Card>
             </div>
             <div className="lg:col-span-2 space-y-6">
-                 <SpendingInsights transactions={budgetChartTransactions} budgets={displayBudgets} categories={categories} />
+                 <SpendingInsights 
+                    transactions={budgetChartTransactions} 
+                    budgets={displayBudgets} 
+                    categories={categories}
+                    month={parseInt(budgetChartMonth, 10)}
+                    year={parseInt(budgetChartYear, 10)}
+                 />
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
                         <CardTitle className="text-lg font-medium">Category Breakdown</CardTitle>
@@ -330,7 +338,7 @@ export default function DashboardClient({
                           </SelectContent>
                         </Select>
                     </CardHeader>
-                    <CardContent className="flex justify-center items-center pt-4">
+                    <CardContent className="flex justify-center items-center">
                         <CategoryPieChart transactions={pieChartTransactions} />
                     </CardContent>
                 </Card>
