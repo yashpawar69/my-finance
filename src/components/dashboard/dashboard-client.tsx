@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useTransition } from 'react';
+import React, { useState, useMemo, useTransition, useEffect } from 'react';
 import type { Transaction, Category, Budget } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { AddTransactionSheet } from './add-transaction-sheet';
 import { SetBudgetDialog } from './set-budget-dialog';
 import BudgetComparisonChart from './budget-comparison-chart';
 import SpendingInsights from './spending-insights';
-import { addTransaction, updateTransaction, deleteTransaction } from '@/app/actions';
+import { addTransaction, updateTransaction, deleteTransaction, getBudgetsForMonth } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -34,7 +34,7 @@ type DashboardClientProps = {
 export default function DashboardClient({ 
   initialTransactions: transactions, 
   categories,
-  initialBudgets: budgets,
+  initialBudgets,
   currentMonth,
   currentYear
 }: DashboardClientProps) {
@@ -46,6 +46,11 @@ export default function DashboardClient({
   const [selectedYear, setSelectedYear] = useState('all');
   const [monthlyExpenseYear, setMonthlyExpenseYear] = useState('all');
   const [monthlyExpenseMonth, setMonthlyExpenseMonth] = useState('all');
+  
+  const [budgetChartYear, setBudgetChartYear] = useState(String(currentYear));
+  const [budgetChartMonth, setBudgetChartMonth] = useState(String(currentMonth));
+  const [displayBudgets, setDisplayBudgets] = useState<Budget[]>(initialBudgets);
+
 
   const months = useMemo(() => [
     { value: 'all', label: 'All Months' },
@@ -55,12 +60,7 @@ export default function DashboardClient({
     })),
   ], []);
 
-  const currentMonthTransactions = useMemo(() => {
-    return transactions.filter(t => {
-        const transactionDate = new Date(t.date);
-        return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
-    });
-  }, [transactions, currentMonth, currentYear]);
+  const budgetMonths = useMemo(() => months.filter(m => m.value !== 'all'), [months]);
 
   const availableYears = useMemo(() => {
     if (transactions.length === 0) {
@@ -70,6 +70,32 @@ export default function DashboardClient({
     years.sort((a, b) => b - a);
     return ['all', ...years.map(String)];
   }, [transactions]);
+  
+  const budgetYears = useMemo(() => availableYears.filter(y => y !== 'all'), [availableYears]);
+
+  useEffect(() => {
+    const year = parseInt(budgetChartYear);
+    const month = parseInt(budgetChartMonth);
+
+    if (year === currentYear && month === currentMonth) {
+      setDisplayBudgets(initialBudgets);
+      return;
+    }
+    
+    startTransition(async () => {
+      const newBudgets = await getBudgetsForMonth(month, year);
+      setDisplayBudgets(newBudgets);
+    });
+  }, [budgetChartYear, budgetChartMonth, currentYear, currentMonth, initialBudgets]);
+  
+  const budgetChartTransactions = useMemo(() => {
+    const year = parseInt(budgetChartYear, 10);
+    const month = parseInt(budgetChartMonth, 10);
+    return transactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate.getMonth() === month && transactionDate.getFullYear() === year;
+    });
+  }, [transactions, budgetChartMonth, budgetChartYear]);
 
   const pieChartTransactions = useMemo(() => {
     if (selectedYear === 'all') {
@@ -210,11 +236,37 @@ export default function DashboardClient({
         <div className="grid gap-6 mt-6 md:grid-cols-2 lg:grid-cols-5">
             <div className="lg:col-span-3 space-y-6">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Budget vs. Actual Spending (Current Month)</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
+                        <CardTitle className="text-lg font-medium">Budget vs. Actual Spending</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Select value={budgetChartMonth} onValueChange={setBudgetChartMonth}>
+                                <SelectTrigger className="w-[150px]">
+                                    <SelectValue placeholder="Select month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {budgetMonths.map((month) => (
+                                        <SelectItem key={month.value} value={month.value}>
+                                            {month.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={budgetChartYear} onValueChange={setBudgetChartYear}>
+                                <SelectTrigger className="w-[130px]">
+                                    <SelectValue placeholder="Select year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(budgetYears.length > 0 ? budgetYears : [String(currentYear)]).map((year) => (
+                                    <SelectItem key={year} value={year}>
+                                        {year}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <BudgetComparisonChart transactions={currentMonthTransactions} budgets={budgets} categories={categories} />
+                        <BudgetComparisonChart transactions={budgetChartTransactions} budgets={displayBudgets} categories={categories} />
                     </CardContent>
                 </Card>
                 <Card>
@@ -261,7 +313,7 @@ export default function DashboardClient({
                 </Card>
             </div>
             <div className="lg:col-span-2 space-y-6">
-                 <SpendingInsights transactions={currentMonthTransactions} budgets={budgets} categories={categories} />
+                 <SpendingInsights transactions={budgetChartTransactions} budgets={displayBudgets} categories={categories} />
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
                         <CardTitle className="text-lg font-medium">Category Breakdown</CardTitle>
@@ -307,9 +359,9 @@ export default function DashboardClient({
         isOpen={isBudgetDialogOpen}
         setIsOpen={setIsBudgetDialogOpen}
         categories={categories}
-        currentBudgets={budgets}
-        currentMonth={currentMonth}
-        currentYear={currentYear}
+        currentBudgets={displayBudgets}
+        currentMonth={parseInt(budgetChartMonth, 10)}
+        currentYear={parseInt(budgetChartYear, 10)}
       />
     </div>
   );
