@@ -15,6 +15,13 @@ import BudgetComparisonChart from './budget-comparison-chart';
 import SpendingInsights from './spending-insights';
 import { addTransaction, updateTransaction, deleteTransaction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type DashboardClientProps = {
   initialTransactions: Transaction[];
@@ -36,6 +43,7 @@ export default function DashboardClient({
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [selectedYear, setSelectedYear] = useState('all');
 
   const currentMonthTransactions = useMemo(() => {
     return transactions.filter(t => {
@@ -44,6 +52,22 @@ export default function DashboardClient({
     });
   }, [transactions, currentMonth, currentYear]);
 
+  const availableYears = useMemo(() => {
+    if (transactions.length === 0) {
+      return ['all', String(new Date().getFullYear())];
+    }
+    const years = [...new Set(transactions.map((t) => new Date(t.date).getFullYear()))];
+    years.sort((a, b) => b - a);
+    return ['all', ...years.map(String)];
+  }, [transactions]);
+
+  const pieChartTransactions = useMemo(() => {
+    if (selectedYear === 'all') {
+      return transactions;
+    }
+    const year = parseInt(selectedYear, 10);
+    return transactions.filter((t) => new Date(t.date).getFullYear() === year);
+  }, [transactions, selectedYear]);
 
   const summary = useMemo(() => {
     const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -182,11 +206,23 @@ export default function DashboardClient({
             <div className="lg:col-span-2 space-y-6">
                  <SpendingInsights transactions={currentMonthTransactions} budgets={budgets} categories={categories} />
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Category Breakdown (All Time)</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
+                        <CardTitle className="text-lg font-medium">Category Breakdown</CardTitle>
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                          <SelectTrigger className="w-[130px]">
+                            <SelectValue placeholder="Select year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                             {availableYears.map((year) => (
+                              <SelectItem key={year} value={year}>
+                                {year === 'all' ? 'All Time' : year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                     </CardHeader>
                     <CardContent className="flex justify-center items-center pt-4">
-                        <CategoryPieChart transactions={transactions} />
+                        <CategoryPieChart transactions={pieChartTransactions} />
                     </CardContent>
                 </Card>
             </div>
