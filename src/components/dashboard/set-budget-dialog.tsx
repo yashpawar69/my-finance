@@ -53,13 +53,15 @@ export function SetBudgetDialog({
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
 
-  const defaultValues = categories.map(category => {
-    const existingBudget = currentBudgets.find(b => b.category === category);
-    return {
-      category,
-      limitAmount: existingBudget?.limitAmount,
-    };
-  });
+  const defaultValues = React.useMemo(() => {
+    return categories.map(category => {
+      const existingBudget = currentBudgets.find(b => b.category === category);
+      return {
+        category,
+        limitAmount: existingBudget?.limitAmount,
+      };
+    });
+  }, [categories, currentBudgets]);
 
   const form = useForm<z.infer<typeof budgetFormSchema>>({
     resolver: zodResolver(budgetFormSchema),
