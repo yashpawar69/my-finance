@@ -23,7 +23,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { upsertBudget } from '@/app/actions';
 
 const budgetFormSchema = z.object({
@@ -50,7 +50,6 @@ export function SetBudgetDialog({
   currentMonth,
   currentYear,
 }: SetBudgetDialogProps) {
-  const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
 
   const defaultValues = React.useMemo(() => {
@@ -99,10 +98,8 @@ export function SetBudgetDialog({
           });
           if (!result.success) {
             success = false;
-            toast({
-              title: `Error setting budget for ${budget.category}`,
+            toast.error(`Error setting budget for ${budget.category}`, {
               description: result.error || 'An unknown error occurred.',
-              variant: 'destructive',
             });
             break; 
           }
@@ -110,8 +107,7 @@ export function SetBudgetDialog({
       }
 
       if (success) {
-        toast({
-          title: 'Budgets Saved',
+        toast.success('Budgets Saved', {
           description: 'Your monthly budgets have been updated.',
         });
         setIsOpen(false);

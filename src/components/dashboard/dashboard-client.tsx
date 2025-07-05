@@ -14,7 +14,7 @@ import { SetBudgetDialog } from './set-budget-dialog';
 import BudgetComparisonChart from './budget-comparison-chart';
 import SpendingInsights from './spending-insights';
 import { addTransaction, updateTransaction, deleteTransaction, getBudgetsForMonth } from '@/app/actions';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -42,7 +42,6 @@ export default function DashboardClient({
   const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
   const [selectedYear, setSelectedYear] = useState('all');
   const [monthlyExpenseYear, setMonthlyExpenseYear] = useState('all');
   const [monthlyExpenseMonth, setMonthlyExpenseMonth] = useState('all');
@@ -152,15 +151,12 @@ export default function DashboardClient({
     startTransition(async () => {
       const result = await deleteTransaction(id);
       if (result.success) {
-        toast({
-          title: 'Transaction Deleted',
+        toast.success('Transaction Deleted', {
           description: 'The transaction has been successfully deleted.',
         });
       } else {
-        toast({
-          title: 'Error Deleting',
+        toast.error('Error Deleting', {
           description: result.error || 'An unknown error occurred.',
-          variant: 'destructive',
         });
       }
     });
@@ -176,16 +172,13 @@ export default function DashboardClient({
         : await addTransaction(transactionData);
 
       if (result.success) {
-        toast({
-          title: `Transaction ${isEditing ? 'Updated' : 'Added'}`,
+        toast.success(`Transaction ${isEditing ? 'Updated' : 'Added'}`, {
           description: `Successfully ${isEditing ? 'updated' : 'added'} transaction.`,
         });
         setIsSheetOpen(false);
       } else {
-        toast({
-          title: `Error ${isEditing ? 'Updating' : 'Adding'}`,
+        toast.error(`Error ${isEditing ? 'Updating' : 'Adding'}`, {
           description: result.error || 'An unknown error occurred.',
-          variant: 'destructive',
         });
       }
     });
