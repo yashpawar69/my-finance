@@ -2,8 +2,8 @@
 
 import 'dotenv/config';
 import { revalidatePath } from 'next/cache';
-import { connectToDatabase } from '../lib/db';
-import type { Transaction, Budget } from '../lib/types';
+import { connectToDatabase } from '@/lib/db';
+import type { Transaction, Budget } from '@/lib/types';
 import { ObjectId } from 'mongodb';
 
 type NewTransaction = Omit<Transaction, 'id'>;
