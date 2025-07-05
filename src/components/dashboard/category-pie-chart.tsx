@@ -58,9 +58,9 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
   }
 
   return (
-    <div className="h-[350px] w-full">
-      <ChartContainer config={chartConfig}>
-        <PieChart margin={{ top: 40, bottom: 40 }}>
+    <div className="w-full h-[350px]">
+      <ChartContainer config={chartConfig} className="mx-auto aspect-square h-full">
+        <PieChart>
           <Tooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
           <ChartLegend content={<ChartLegendContent nameKey="name" />} />
           <Pie
@@ -68,8 +68,8 @@ export default function CategoryPieChart({ transactions }: CategoryPieChartProps
             cx="50%"
             cy="50%"
             labelLine={false}
-            outerRadius={120}
-            innerRadius={50}
+            outerRadius={100}
+            innerRadius={40}
             dataKey="value"
             nameKey="name"
             paddingAngle={2}
