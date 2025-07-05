@@ -39,7 +39,7 @@ export default function SpendingInsights({ transactions, budgets, categories, mo
       .filter(d => d.budget > 0);
   }, [transactions, budgets]);
 
-  const monthName = new Date(year, month).toLocaleString('default', { month: 'long' });
+  const monthName = new Date(year, month).toLocaleString('en-US', { month: 'long' });
 
   if (insightsData.length === 0) {
     return (

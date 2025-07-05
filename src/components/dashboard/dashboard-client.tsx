@@ -50,6 +50,11 @@ export default function DashboardClient({
   const [budgetChartMonth, setBudgetChartMonth] = useState(String(currentMonth));
   const [displayBudgets, setDisplayBudgets] = useState<Budget[]>(initialBudgets);
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const months = useMemo(() => [
     { value: 'all', label: 'All Months' },
@@ -63,12 +68,12 @@ export default function DashboardClient({
 
   const availableYears = useMemo(() => {
     if (transactions.length === 0) {
-      return ['all', String(new Date().getFullYear())];
+      return ['all', String(currentYear)];
     }
     const years = [...new Set(transactions.map((t) => new Date(t.date).getFullYear()))];
     years.sort((a, b) => b - a);
     return ['all', ...years.map(String)];
-  }, [transactions]);
+  }, [transactions, currentYear]);
   
   const budgetYears = useMemo(() => availableYears.filter(y => y !== 'all'), [availableYears]);
 
@@ -308,13 +313,27 @@ export default function DashboardClient({
                 </Card>
             </div>
             <div className="lg:col-span-2 space-y-6">
-                 <SpendingInsights 
-                    transactions={budgetChartTransactions} 
-                    budgets={displayBudgets} 
-                    categories={categories}
-                    month={parseInt(budgetChartMonth, 10)}
-                    year={parseInt(budgetChartYear, 10)}
-                 />
+                 {isMounted ? (
+                    <SpendingInsights 
+                        transactions={budgetChartTransactions} 
+                        budgets={displayBudgets} 
+                        categories={categories}
+                        month={parseInt(budgetChartMonth, 10)}
+                        year={parseInt(budgetChartYear, 10)}
+                    />
+                 ) : (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Spending Insights</CardTitle>
+                            <CardDescription>Loading...</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                                Loading insights...
+                            </div>
+                        </CardContent>
+                    </Card>
+                 )}
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
                         <CardTitle className="text-lg font-medium">Category Breakdown</CardTitle>
