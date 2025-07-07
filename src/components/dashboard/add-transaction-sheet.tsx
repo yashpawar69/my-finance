@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -35,7 +35,9 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from '@/components/icons';
+import { CalendarIcon, Sparkles } from '@/components/icons';
+import { suggestCategory } from '@/ai/flows/categorize-transaction-flow';
+import { toast } from 'sonner';
 
 const getTransactionSchema = (categories: Category[]) => z.object({
   description: z.string().min(1, "Description is required."),
@@ -61,6 +63,7 @@ export function AddTransactionSheet({
   onSave,
   isPending,
 }: AddTransactionSheetProps) {
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const transactionSchema = getTransactionSchema(categories);
 
   const form = useForm<z.infer<typeof transactionSchema>>({
@@ -96,6 +99,35 @@ export function AddTransactionSheet({
   const onSubmit = (data: z.infer<typeof transactionSchema>) => {
     onSave({ ...data, id: transaction?.id });
   };
+
+  const handleSuggestCategory = async () => {
+    const description = form.getValues('description');
+    if (!description || description.length < 3) {
+      toast.info('Suggestion requires a description', {
+        description: 'Please enter a description of at least 3 characters.',
+      });
+      return;
+    }
+
+    setIsSuggesting(true);
+    try {
+      const result = await suggestCategory({ description });
+      if (result.category) {
+        form.setValue('category', result.category, { shouldValidate: true });
+        toast.success('Category Suggested!', {
+          description: `We've set the category to "${result.category}".`,
+        });
+      }
+    } catch (error) {
+      console.error('Error suggesting category:', error);
+      toast.error('Suggestion Failed', {
+        description: 'Could not get an AI suggestion. Please select a category manually.',
+      });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -142,7 +174,20 @@ export function AddTransactionSheet({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <div className="flex justify-between items-center">
+                    <FormLabel>Category</FormLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSuggestCategory}
+                      disabled={isSuggesting || isPending}
+                      className="text-xs h-7"
+                    >
+                      <Sparkles className="w-3 h-3 mr-2" />
+                      {isSuggesting ? 'Suggesting...' : 'Suggest'}
+                    </Button>
+                  </div>
                   <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>

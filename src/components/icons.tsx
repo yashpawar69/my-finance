@@ -18,4 +18,5 @@ export {
   Calendar as CalendarIcon,
   ChevronDown,
   Target,
+  Sparkles,
 } from "lucide-react";
